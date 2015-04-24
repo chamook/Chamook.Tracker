@@ -1,6 +1,7 @@
 ﻿open HttpClient
 open System
 open System.Threading
+open Newtonsoft.Json
 
 let login username pin = 
     let data = "username=" + username + "&pin=" + pin + "&image.x=0&image.y=0"
@@ -20,6 +21,9 @@ let openTrackingPage cookieValue =
     |> withCookie {name="ASPSESSIONIDACSCBRTS";value=cookieValue}
     |> getResponse
 
+let parsePosition text = 
+    JsonConvert.DeserializeObject<Haversine.pos> text
+
 let filterTrackingResponse (response:string) = 
     let startPoint = response.IndexOf("goMap(") + 6
     let endPoint = response.IndexOf(",streetViewControl")
@@ -32,17 +36,23 @@ let loginPrompt =
     let pin = Console.ReadLine()
     user, pin
 
+let home = Haversine.pos(0.0<Haversine.deg>, 0.0<Haversine.deg>)
+
 
 let rec track user password = 
     let loginResponse =  login user password
     let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDACSCBRTS"] |> openTrackingPage
 
     match trackingResponse.EntityBody with
-    |Some s -> filterTrackingResponse s |> Console.WriteLine
+    |Some s ->  let distanceFromHome = filterTrackingResponse s |> parsePosition |> Haversine.hsDist home
+                if distanceFromHome>0.4<Haversine.km> then
+                    Console.WriteLine "AWAY FROM HOME"
+                else
+                    Console.WriteLine "at home"
     |None -> Console.WriteLine "No data!"
 
     Thread.Sleep 240000
-
+     
     track user password
     
 
