@@ -1,4 +1,5 @@
 ﻿open HttpClient
+open System
 open System.Threading
 
 let login username pin = 
@@ -25,19 +26,21 @@ let filterTrackingResponse (response:string) =
     response.Substring(startPoint, endPoint - startPoint)
 
 let loginPrompt = 
-    System.Console.WriteLine "Enter Username:"
-    let user = System.Console.ReadLine()
-    System.Console.WriteLine "Enter PIN:"
-    let pin = System.Console.ReadLine()
+    Console.WriteLine "Enter Username:"
+    let user = Console.ReadLine()
+    Console.WriteLine "Enter PIN:"
+    let pin = Console.ReadLine()
     user, pin
+
+
 
 let rec track user password = 
     let loginResponse =  login user password
     let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDACSCBRTS"] |> openTrackingPage
 
     match trackingResponse.EntityBody with
-    |Some s -> filterTrackingResponse s |> System.Console.WriteLine
-    |None -> System.Console.WriteLine "No data!"
+    |Some s -> filterTrackingResponse s |> Console.WriteLine
+    |None -> Console.WriteLine "No data!"
 
     Thread.Sleep 240000
 
@@ -48,5 +51,5 @@ let rec track user password =
 let main argv = 
     loginPrompt ||> track
 
-    System.Console.ReadLine |> ignore
+    Console.ReadLine |> ignore
     0
