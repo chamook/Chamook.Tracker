@@ -21,9 +21,9 @@ let openTrackingPage cookieValue =
     |> getResponse
 
 let filterTrackingResponse (response:string) = 
-    let startPoint = response.IndexOf("latitude:")
+    let startPoint = response.IndexOf("goMap(") + 6
     let endPoint = response.IndexOf(",streetViewControl")
-    response.Substring(startPoint, endPoint - startPoint)
+    response.Substring(startPoint, endPoint - startPoint) + "}"
 
 let loginPrompt = 
     Console.WriteLine "Enter Username:"
@@ -31,7 +31,6 @@ let loginPrompt =
     Console.WriteLine "Enter PIN:"
     let pin = Console.ReadLine()
     user, pin
-
 
 
 let rec track user password = 
