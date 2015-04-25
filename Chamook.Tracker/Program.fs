@@ -21,7 +21,7 @@ let openTrackingPage cookieValue =
     |> withHeader (Referer "http://www.mindme.care")
     |> withHeader (Pragma "no-cache")
     |> withKeepAlive true
-    |> withCookie {name="ASPSESSIONIDACSCBRTS";value=cookieValue}
+    |> withCookie {name="ASPSESSIONIDSAQAQDQS";value=cookieValue}
     |> getResponse
 
 let parsePosition text = 
@@ -62,15 +62,17 @@ let comparePositions previousPosition currentPosition =
 
 let processPosition (pos:Haversine.pos, history:list<historicalPosition>) = 
     let distance = pos |> Haversine.hsDist home
+    let consoleMessage = sprintf "Found Position - distance from home: %f" (float distance)
+    System.Console.WriteLine consoleMessage
     let newPosition = {position=pos;distanceFromHome=distance}
     match history with
     | [] -> [newPosition]
     | head::_ ->    match comparePositions head newPosition with
                     |AtHome -> newPosition::history
                     |AwayFromHomeMoving -> newPosition::history
-                    |AwayFromHomeFirstTime ->   Pushbullet.sendPush "chamookdk@gmail.com" "Movement Alert" "Away from home first time"
+                    |AwayFromHomeFirstTime ->   Pushbullet.sendPush "" "Movement Alert" "Away from home first time" |> ignore
                                                 newPosition::history
-                    |AwayFromHomeStationary ->  Pushbullet.sendPush "chamookdk@gmail.com" "Movement Alert" "Away from home stationary"
+                    |AwayFromHomeStationary ->  Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
                                                 newPosition::history
 
                      
@@ -79,7 +81,7 @@ let processPosition (pos:Haversine.pos, history:list<historicalPosition>) =
 
 let rec track (history:list<historicalPosition>, user:string, password:string) = 
     let loginResponse =  login user password
-    let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDACSCBRTS"] |> openTrackingPage
+    let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDSAQAQDQS"] |> openTrackingPage
 
     let newHistory =    match trackingResponse.EntityBody with
                         |Some s -> 

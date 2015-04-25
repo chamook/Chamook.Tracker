@@ -14,6 +14,8 @@ type emailPushRequest = {
     body:string}
 
 let sendPush recipientMail heading message = 
+    let consoleMessage = sprintf "sending a push to %s with heading %s and message %s" recipientMail heading message
+    System.Console.WriteLine consoleMessage
     let authHeader = "Bearer " + accessToken
     let requestBody = {email=recipientMail;Type="note";title=heading;body=message}
     let bodyText = JsonConvert.SerializeObject(requestBody)
@@ -22,4 +24,3 @@ let sendPush recipientMail heading message =
     |> withHeader (ContentType "application/json")
     |> withBody bodyText
     |> getResponse
-    |> System.Console.WriteLine
