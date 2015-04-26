@@ -45,16 +45,25 @@ type positionAnalysis =
     |AwayFromHomeFirstTime
     |AwayFromHomeMoving
     |AwayFromHomeStationary
+    |AtHomeReturned
     |AtHome
 
+
+let rangeFromHome = 0.2<Haversine.km>
+let stationaryRange = 0.1<Haversine.km>
+
+
 let comparePositions previousPosition currentPosition = 
-    if currentPosition.distanceFromHome < 0.4<Haversine.km> then
-        AtHome
+    if currentPosition.distanceFromHome < rangeFromHome then
+        if previousPosition.distanceFromHome > rangeFromHome then
+            AtHomeReturned
+        else
+            AtHome
     else
-        if previousPosition.distanceFromHome < 0.4<Haversine.km> then
+        if previousPosition.distanceFromHome < rangeFromHome then
             AwayFromHomeFirstTime
         else
-            if currentPosition.distanceFromHome - previousPosition.distanceFromHome < 0.1<Haversine.km> then
+            if Haversine.hsDist currentPosition.position previousPosition.position < stationaryRange then
                 AwayFromHomeStationary
             else
                 AwayFromHomeMoving
@@ -67,14 +76,21 @@ let processPosition (pos:Haversine.pos, history:list<historicalPosition>) =
     let newPosition = {position=pos;distanceFromHome=distance}
     match history with
     | [] -> [newPosition]
-    | head::_ ->    match comparePositions head newPosition with
+    | head::tail -> match comparePositions head newPosition with
                     |AtHome -> newPosition::history
                     |AwayFromHomeMoving -> newPosition::history
                     |AwayFromHomeFirstTime ->   Pushbullet.sendPush "" "Movement Alert" "Away from home first time" |> ignore
                                                 newPosition::history
-                    |AwayFromHomeStationary ->  Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
-                                                newPosition::history
+                    |AwayFromHomeStationary ->  match tail with
+                                                |[] ->  Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
+                                                        newPosition::history
+                                                |second::_ ->   match comparePositions head second with
+                                                                |AwayFromHomeStationary ->  newPosition::history
+                                                                |_ ->   Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
+                                                                        newPosition::history
 
+                    |AtHomeReturned ->  Pushbullet.sendPush "" "Movement Alert" "Returned to home" |> ignore
+                                        newPosition::history
                      
     
 
