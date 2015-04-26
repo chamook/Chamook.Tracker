@@ -78,7 +78,12 @@ let processPosition (pos:Haversine.pos, history:list<historicalPosition>) =
     | [] -> [newPosition]
     | head::tail -> match comparePositions head newPosition with
                     |AtHome -> newPosition::history
-                    |AwayFromHomeMoving -> newPosition::history
+                    |AwayFromHomeMoving ->  match tail with
+                                            |[] -> newPosition::history
+                                            |second::_ ->   match comparePositions head second with
+                                                            |AwayFromHomeStationary ->  Pushbullet.sendPush "" "Movement Alert" "Away from home moving, after being stationary" |> ignore
+                                                                                        newPosition::history
+                                                            |_ -> newPosition::history
                     |AwayFromHomeFirstTime ->   Pushbullet.sendPush "" "Movement Alert" "Away from home first time" |> ignore
                                                 newPosition::history
                     |AwayFromHomeStationary ->  match tail with
