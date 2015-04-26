@@ -68,6 +68,7 @@ let comparePositions previousPosition currentPosition =
             else
                 AwayFromHomeMoving
     
+let pushRecipient = ""
 
 let processPosition (pos:Haversine.pos, history:list<historicalPosition>) = 
     let distance = pos |> Haversine.hsDist home
@@ -81,20 +82,20 @@ let processPosition (pos:Haversine.pos, history:list<historicalPosition>) =
                     |AwayFromHomeMoving ->  match tail with
                                             |[] -> newPosition::history
                                             |second::_ ->   match comparePositions head second with
-                                                            |AwayFromHomeStationary ->  Pushbullet.sendPush "" "Movement Alert" "Away from home moving, after being stationary" |> ignore
+                                                            |AwayFromHomeStationary ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home moving, after being stationary" |> ignore
                                                                                         newPosition::history
                                                             |_ -> newPosition::history
-                    |AwayFromHomeFirstTime ->   Pushbullet.sendPush "" "Movement Alert" "Away from home first time" |> ignore
+                    |AwayFromHomeFirstTime ->   Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home first time" |> ignore
                                                 newPosition::history
                     |AwayFromHomeStationary ->  match tail with
-                                                |[] ->  Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
+                                                |[] ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home stationary" |> ignore
                                                         newPosition::history
                                                 |second::_ ->   match comparePositions head second with
                                                                 |AwayFromHomeStationary ->  newPosition::history
-                                                                |_ ->   Pushbullet.sendPush "" "Movement Alert" "Away from home stationary" |> ignore
+                                                                |_ ->   Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home stationary" |> ignore
                                                                         newPosition::history
 
-                    |AtHomeReturned ->  Pushbullet.sendPush "" "Movement Alert" "Returned to home" |> ignore
+                    |AtHomeReturned ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Returned to home" |> ignore
                                         newPosition::history
                      
     
