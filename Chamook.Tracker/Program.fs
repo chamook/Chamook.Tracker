@@ -83,14 +83,20 @@ let rec track (history:list<historicalPosition>, user:string, password:string) =
     let loginResponse =  login user password
     let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDSAQAQDQS"] |> openTrackingPage
 
-    let newHistory =    match trackingResponse.EntityBody with
-                        |Some s -> 
-                            let parsedPosition = filterTrackingResponse s |> parsePosition
-                            processPosition(parsedPosition,history)
-                        |None -> history
+    let newHistory = 
+        try
+            match trackingResponse.EntityBody with
+            |Some s -> 
+                let parsedPosition = filterTrackingResponse s |> parsePosition
+                processPosition(parsedPosition,history)
+            |None -> history
+        with
+        | ex -> sprintf "Exception occured: %s" ex.Message |> Console.WriteLine
+                Console.WriteLine "Resetting history data, this will prevent the next position from sending an alert because there is no comparison data..."
+                []
 
     Thread.Sleep 240000
-     
+
     track(newHistory,user,password)
 
 [<EntryPoint>]
