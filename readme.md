@@ -7,4 +7,6 @@ I have a relative with dementia, sometimes they get lost. With handy GPS trackin
 #How I Use This?#
 Set home coordinates, and recipients up in the code, run the app, provide login details for the mindme website, and that's pretty much it.
 
+There's a snazzy build setup using FAKE that will build the project and generate a zip file for easy deployment - to use that just run the build.bat file in the root directory.
+
 If you have ideas for betterer code or features or whatever, make a pull request and I'll be filled with happiness that someone else benefited from this stuff :D
