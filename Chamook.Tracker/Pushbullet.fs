@@ -24,3 +24,6 @@ let sendPush recipientMail heading message =
     |> withHeader (ContentType "application/json")
     |> withBody bodyText
     |> getResponse
+
+let spam recipientList heading message =
+    recipientList |> List.map (fun i -> sendPush i heading message)
