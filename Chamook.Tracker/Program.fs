@@ -16,12 +16,20 @@ let login username pin =
     |> withBody data
     |> getResponse
 
-let openTrackingPage cookieValue = 
-    createRequest Get "http://79.123.36.5/mmuserlocation.asp"
-    |> withHeader (Referer "http://www.mindme.care")
-    |> withHeader (Pragma "no-cache")
-    |> withKeepAlive true
-    |> withCookie {name="ASPSESSIONIDSAQAQDQS";value=cookieValue}
+let rec applyCookies webRequest cookies = 
+    match cookies with
+    | [] -> webRequest
+    | head:: tail ->    let newRequest = webRequest |> withCookie {name=fst head;value=snd head}
+                        applyCookies newRequest tail
+
+let openTrackingPage cookies = 
+    let request = 
+        createRequest Get "http://79.123.36.5/mmuserlocation.asp"
+        |> withHeader (Referer "http://www.mindme.care")
+        |> withHeader (Pragma "no-cache")
+        |> withKeepAlive true
+
+    applyCookies request cookies
     |> getResponse
 
 let parsePosition text = 
@@ -82,28 +90,31 @@ let processPosition (pos:Haversine.pos, history:list<historicalPosition>) =
                     |AwayFromHomeMoving ->  match tail with
                                             |[] -> newPosition::history
                                             |second::_ ->   match comparePositions head second with
-                                                            |AwayFromHomeStationary ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home moving, after being stationary" |> ignore
+                                                            |AwayFromHomeStationary ->  Pushbullet.spam pushRecipients "Movement Alert" "Away from home moving, after being stationary" |> ignore
                                                                                         newPosition::history
                                                             |_ -> newPosition::history
-                    |AwayFromHomeFirstTime ->   Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home first time" |> ignore
+                    |AwayFromHomeFirstTime ->   Pushbullet.spam pushRecipients "Movement Alert" "Away from home first time" |> ignore
                                                 newPosition::history
                     |AwayFromHomeStationary ->  match tail with
-                                                |[] ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home stationary" |> ignore
+                                                |[] ->  Pushbullet.spam pushRecipients "Movement Alert" "Away from home stationary" |> ignore
                                                         newPosition::history
                                                 |second::_ ->   match comparePositions head second with
                                                                 |AwayFromHomeStationary ->  newPosition::history
-                                                                |_ ->   Pushbullet.sendPush pushRecipient "Movement Alert" "Away from home stationary" |> ignore
+                                                                |_ ->   Pushbullet.spam pushRecipients "Movement Alert" "Away from home stationary" |> ignore
                                                                         newPosition::history
 
-                    |AtHomeReturned ->  Pushbullet.sendPush pushRecipient "Movement Alert" "Returned to home" |> ignore
+                    |AtHomeReturned ->  Pushbullet.spam pushRecipients "Movement Alert" "Returned to home" |> ignore
                                         newPosition::history
                      
     
 
+let writeException (ex:Exception) = 
+    sprintf "Exception occured: %s" ex.Message |> Console.WriteLine
 
 let rec track (history:list<historicalPosition>, user:string, password:string) = 
     let loginResponse =  login user password
-    let trackingResponse = loginResponse.Cookies.["ASPSESSIONIDSAQAQDQS"] |> openTrackingPage
+        
+    let trackingResponse = loginResponse.Cookies |> Map.toList |> openTrackingPage
 
     let newHistory = 
         try
@@ -113,7 +124,7 @@ let rec track (history:list<historicalPosition>, user:string, password:string) =
                 processPosition(parsedPosition,history)
             |None -> history
         with
-        | ex -> sprintf "Exception occured: %s" ex.Message |> Console.WriteLine
+        | ex -> writeException ex
                 Console.WriteLine "Resetting history data, this will prevent the next position from sending an alert because there is no comparison data..."
                 []
 
