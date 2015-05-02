@@ -2,3 +2,5 @@ Chamook.Tracker.v12.suo
 Chamook.Tracker/bin/
 Chamook.Tracker/obj/
 packages/
+build/
+deploy/
